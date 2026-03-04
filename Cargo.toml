@@ -1,0 +1,10 @@
+[package]
+name = "invert_image_colors"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[build-dependencies]
+cc = "1.2.56"
+
