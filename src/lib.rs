@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Write};
+use std::path::Path;
 
 #[derive(Debug, Clone, Copy)]
 pub struct PpmHeader {
@@ -67,7 +68,7 @@ pub fn read_ppm(input_file: File) -> io::Result<(PpmHeader, Vec<u8>)> {
     Ok((PpmHeader::new(width, high, max_val), pixels))
 }
 
-pub fn write_ppm(output_path: &str, header: &PpmHeader, pixels: &[u8]) -> io::Result<()> {
+pub fn write_ppm(output_path: &Path, header: &PpmHeader, pixels: &[u8]) -> io::Result<()> {
     let output_file = File::create(output_path)?;
     let mut writer = BufWriter::new(output_file);
     write!(writer, "{header}")?;

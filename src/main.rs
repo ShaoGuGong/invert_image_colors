@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::File;
+use std::fs::{self, File};
 use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
@@ -12,8 +12,8 @@ extern "C" {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Usage: {} <input_image_path> <output_image_path>", args[0]);
+    if args.len() < 3 {
+        println!("Usage: {} <input_image_path> <output_dir>", args[0]);
         exit(1);
     }
     let image_path = Path::new(&args[1]);
@@ -25,6 +25,14 @@ fn main() {
         println!("Can't not open file {}", args[1]);
         exit(1);
     };
+
+    let output_dir = Path::new(&args[2]);
+    if !output_dir.exists() {
+        if let Err(e) = fs::create_dir_all(output_dir) {
+            println!("Can't not create dir {} {}", args[2], e);
+            exit(1);
+        }
+    }
 
     let (header, mut cpu_pixels) = read_ppm(file).unwrap_or_else(|e| {
         println!("{e}");
@@ -40,12 +48,25 @@ fn main() {
     invert_colors(&mut cpu_pixels);
     let cpu_duration = cpu_start.elapsed();
 
-    if let Err(e) = write_ppm("output_cpu.ppm", &header, &cpu_pixels) {
-        println!("{e}");
+    let output_file_name = format!(
+        "invert_colors_{}",
+        args[1]
+            .split('/')
+            .last()
+            .unwrap_or("output")
+            .split('.')
+            .next()
+            .unwrap_or("output")
+    );
+    let cpu_output_path = output_dir.join(format!("{}_cpu.ppm", output_file_name));
+    let gpu_output_path = output_dir.join(format!("{}_gpu.ppm", output_file_name));
+
+    if let Err(e) = write_ppm(cpu_output_path.as_path(), &header, &cpu_pixels) {
+        println!("Can't write cpu.ppm {e}");
         exit(1);
     }
-    if let Err(e) = write_ppm("output_gpu.ppm", &header, &gpu_pixels) {
-        println!("{e}");
+    if let Err(e) = write_ppm(gpu_output_path.as_path(), &header, &gpu_pixels) {
+        println!("Can't write gpu.ppm {e}");
         exit(1);
     }
 
